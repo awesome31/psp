@@ -18,9 +18,15 @@ export default function CallHistoryPage() {
   }, []);
 
   useEffect(() => {
-    load();
-    const t = setInterval(load, 5000);
-    return () => clearInterval(t);
+    const refresh = () => {
+      void load();
+    };
+    const timer = window.setTimeout(refresh, 0);
+    const interval = window.setInterval(refresh, 5000);
+    return () => {
+      window.clearTimeout(timer);
+      window.clearInterval(interval);
+    };
   }, [load]);
 
   return (

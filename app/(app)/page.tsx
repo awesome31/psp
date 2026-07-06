@@ -23,7 +23,7 @@ function nowLocal() {
 
 const EMPTY = {
   name: "",
-  phone: "+91",
+  phone: "",
   call_type: "follow_up",
   scheduled_at: "",
   doctor_name: "",
@@ -36,14 +36,17 @@ export default function CreateCallsPage() {
   const [busy, setBusy] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
 
-  // Default the schedule time to now, on the client (avoids SSR hydration drift).
-  useEffect(() => {
-    setForm((f) => (f.scheduled_at ? f : { ...f, scheduled_at: nowLocal() }));
-  }, []);
-
   function set<K extends keyof typeof form>(key: K, value: string) {
     setForm((f) => ({ ...f, [key]: value }));
   }
+
+  // Default the schedule time to now after hydration so SSR markup stays stable.
+  useEffect(() => {
+    const timer = window.setTimeout(() => {
+      setForm((f) => (f.scheduled_at ? f : { ...f, scheduled_at: nowLocal() }));
+    }, 0);
+    return () => window.clearTimeout(timer);
+  }, []);
 
   async function addOne(e: React.FormEvent) {
     e.preventDefault();
@@ -109,8 +112,14 @@ export default function CreateCallsPage() {
               <Input id="name" value={form.name} onChange={(e) => set("name", e.target.value)} placeholder="Rohit Tyagi" required />
             </div>
             <div className="space-y-1.5">
-              <Label htmlFor="phone">Phone (E.164)</Label>
-              <Input id="phone" value={form.phone} onChange={(e) => set("phone", e.target.value)} placeholder="+919930045439" required />
+              <Label htmlFor="phone">Phone</Label>
+              <Input
+                id="phone"
+                value={form.phone}
+                onChange={(e) => set("phone", e.target.value)}
+                placeholder="9821318912 or +919821318912"
+                required
+              />
             </div>
             <div className="space-y-1.5">
               <Label>Call type</Label>
@@ -156,7 +165,8 @@ export default function CreateCallsPage() {
             <UploadCloud className="size-4 text-muted-foreground" /> Or bulk upload (CSV)
           </CardTitle>
           <CardDescription>
-            Columns: name, phone, call_type, scheduled_at, doctor_name, medicine_name, last_visit_date
+            Columns: name, phone, call_type, scheduled_at, doctor_name, medicine_name, last_visit_date. Indian
+            10-digit mobiles are accepted.
           </CardDescription>
         </CardHeader>
         <CardContent>

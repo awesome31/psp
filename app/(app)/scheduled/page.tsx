@@ -11,6 +11,7 @@ import type { Patient } from "@/lib/types";
 
 export default function ScheduledPage() {
   const [patients, setPatients] = useState<Patient[]>([]);
+  const [now, setNow] = useState<number | null>(null);
   const [busy, setBusy] = useState(false);
 
   const load = useCallback(async () => {
@@ -20,9 +21,16 @@ export default function ScheduledPage() {
   }, []);
 
   useEffect(() => {
-    load();
-    const t = setInterval(load, 5000);
-    return () => clearInterval(t);
+    const refresh = () => {
+      setNow(Date.now());
+      void load();
+    };
+    const timer = window.setTimeout(refresh, 0);
+    const interval = window.setInterval(refresh, 5000);
+    return () => {
+      window.clearTimeout(timer);
+      window.clearInterval(interval);
+    };
   }, [load]);
 
   async function runScheduler() {
@@ -33,9 +41,21 @@ export default function ScheduledPage() {
       const res = await fetch(url);
       const data = await res.json();
       if (!res.ok) throw new Error(data.error ?? "Run failed");
-      toast.success(`Scheduler ran — placed ${data.placed}, failed ${data.failed}`, {
-        description: `${data.claimed} patient(s) were due.`,
-      });
+      if (data.claimed === 0) {
+        toast.info("No calls were due.", {
+          description: "Set scheduled_at to now or a past time, then run the scheduler again.",
+        });
+      } else if (data.failed > 0) {
+        const firstError = data.details?.find((d: { error?: string }) => d.error)?.error;
+        toast.warning(`Scheduler ran: placed ${data.placed}, failed ${data.failed}`, {
+          description: firstError ?? `${data.claimed} patient(s) were due.`,
+        });
+      } else {
+        toast.success(`Scheduler ran: placed ${data.placed}, failed ${data.failed}`, {
+          description: `${data.claimed} patient(s) were due.`,
+        });
+      }
+      setNow(Date.now());
       await load();
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Run failed");
@@ -45,8 +65,7 @@ export default function ScheduledPage() {
   }
 
   const pending = patients.filter((p) => p.status === "pending" || p.status === "calling");
-  const now = Date.now();
-  const due = pending.filter((p) => new Date(p.scheduledAt).getTime() <= now);
+  const due = now === null ? [] : pending.filter((p) => new Date(p.scheduledAt).getTime() <= now);
 
   return (
     <Card>
@@ -58,11 +77,19 @@ export default function ScheduledPage() {
           </CardDescription>
         </div>
         <div className="flex gap-2">
-          <Button variant="outline" size="sm" onClick={load} disabled={busy}>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => {
+              setNow(Date.now());
+              void load();
+            }}
+            disabled={busy}
+          >
             <RefreshCw className="size-4" /> Refresh
           </Button>
           <Button size="sm" onClick={runScheduler} disabled={busy}>
-            <Play className="size-4" /> Run scheduler now
+            <Play className="size-4" /> Run due calls now
           </Button>
         </div>
       </CardHeader>
@@ -74,7 +101,7 @@ export default function ScheduledPage() {
         ) : (
           <ul className="divide-y">
             {pending.map((p) => {
-              const isDue = new Date(p.scheduledAt).getTime() <= now;
+              const isDue = now !== null && new Date(p.scheduledAt).getTime() <= now;
               return (
                 <li key={p.id} className="flex flex-wrap items-center justify-between gap-2 py-3 first:pt-0 last:pb-0">
                   <div className="flex items-center gap-2">

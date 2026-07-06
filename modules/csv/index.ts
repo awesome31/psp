@@ -6,6 +6,33 @@ import { z } from "zod";
 
 // One column decides which script runs. Keep in sync with the CallType enum.
 const callTypeSchema = z.enum(["follow_up", "reminder"]);
+const DEFAULT_SCHEDULE_OFFSET = "+05:30";
+
+function normalizePhone(value: unknown): unknown {
+  if (typeof value !== "string") return value;
+
+  const trimmed = value.trim();
+  const compact = trimmed.replace(/[\s()-]/g, "");
+
+  if (/^\+[1-9]\d{7,14}$/.test(compact)) return compact;
+  if (/^[6-9]\d{9}$/.test(compact)) return `+91${compact}`;
+  if (/^0[6-9]\d{9}$/.test(compact)) return `+91${compact.slice(1)}`;
+
+  return trimmed;
+}
+
+function normalizeScheduledAt(value: unknown): unknown {
+  if (typeof value !== "string") return value;
+
+  const trimmed = value.trim();
+  if (!trimmed) return trimmed;
+  const normalized = trimmed.replace(" ", "T");
+
+  if (/(?:z|[+-]\d{2}:?\d{2})$/i.test(normalized)) return normalized;
+  if (/^\d{4}-\d{2}-\d{2}$/.test(normalized)) return `${normalized}T00:00:00${DEFAULT_SCHEDULE_OFFSET}`;
+
+  return `${normalized}${DEFAULT_SCHEDULE_OFFSET}`;
+}
 
 // Accepts full ISO timestamps and plain dates. Empty -> undefined.
 const optionalDate = z
@@ -20,17 +47,20 @@ const optionalDate = z
 
 const rowSchema = z.object({
   name: z.string().trim().min(1, "name is required"),
-  // E.164: a leading + and 8-15 digits (e.g. +919930045439).
-  phone: z
-    .string()
-    .trim()
-    .regex(/^\+[1-9]\d{7,14}$/, "phone must be E.164, e.g. +919930045439"),
+  // Stored as E.164. For India uploads, accept a common 10-digit mobile too.
+  phone: z.preprocess(
+    normalizePhone,
+    z.string().regex(/^\+[1-9]\d{7,14}$/, "phone must be E.164 or a 10-digit Indian mobile number"),
+  ),
   call_type: callTypeSchema,
-  scheduled_at: z
-    .string()
-    .trim()
-    .refine((v) => !Number.isNaN(Date.parse(v)), { message: "invalid scheduled_at" })
-    .transform((v) => new Date(v)),
+  scheduled_at: z.preprocess(
+    normalizeScheduledAt,
+    z
+      .string()
+      .trim()
+      .refine((v) => !Number.isNaN(Date.parse(v)), { message: "invalid scheduled_at" })
+      .transform((v) => new Date(v)),
+  ),
   doctor_name: z.string().trim().optional(),
   medicine_name: z.string().trim().optional(),
   last_visit_date: optionalDate,

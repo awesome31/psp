@@ -40,9 +40,9 @@ name,phone,call_type,scheduled_at,doctor_name,medicine_name,last_visit_date
 Rohit Tyagi,+919930045439,follow_up,2026-07-06T10:00:00+05:30,Dr XYZ,Telma 40,2026-06-05
 ```
 
-- `phone` — E.164 (`+91...`)
+- `phone` — E.164 (`+91...`) or a 10-digit Indian mobile number
 - `call_type` — `follow_up` or `reminder`
-- `scheduled_at` — ISO timestamp; the cron calls once this time has passed
+- `scheduled_at` — ISO timestamp; offset-less times are treated as IST
 
 See `sample-patients.csv`.
 
