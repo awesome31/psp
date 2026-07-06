@@ -16,7 +16,7 @@ function env(name: string, fallback?: string): string {
 // message, analysis plan) is patient-specific; model/voice come from env.
 function buildAssistant(patient: Patient) {
   const script = buildScript(patient);
-  return {
+  const assistant: Record<string, unknown> = {
     name: `Swasth 365 — ${patient.callType}`,
     firstMessage: script.firstMessage,
     model: {
@@ -40,9 +40,17 @@ function buildAssistant(patient: Patient) {
         schema: script.structuredSchema,
       },
     },
-    // Vapi posts call events (including end-of-call-report) to this URL.
-    server: { url: `${env("APP_URL")}/api/webhooks/vapi` },
   };
+
+  // Only register the webhook when APP_URL is a public HTTPS URL Vapi can reach.
+  // Locally (http://localhost), we skip it so the call still succeeds; set up a
+  // tunnel (ngrok) and a public APP_URL to receive call summaries.
+  const appUrl = process.env.APP_URL ?? "";
+  if (appUrl.startsWith("https://")) {
+    assistant.server = { url: `${appUrl}/api/webhooks/vapi` };
+  }
+
+  return assistant;
 }
 
 export type PlaceCallResult = { vapiCallId: string };
