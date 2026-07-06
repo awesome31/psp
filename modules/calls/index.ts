@@ -1,6 +1,14 @@
 // Call repository — each call attempt and its outcome.
 import { prisma, type Call, type CallType } from "@/modules/db";
 
+// All calls, newest first, with the patient's name/phone for the history view.
+export async function listCalls() {
+  return prisma.call.findMany({
+    orderBy: { createdAt: "desc" },
+    include: { patient: { select: { name: true, phone: true } } },
+  });
+}
+
 export async function createCall(input: {
   patientId: string;
   callType: CallType;
