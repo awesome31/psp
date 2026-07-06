@@ -2,12 +2,17 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
-import { Play, RefreshCw } from "lucide-react";
+import { Play, RefreshCw, Trash2 } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { StatusBadge } from "@/components/status-badge";
 import type { Patient } from "@/lib/types";
+
+function protectedUrl(path: string): string {
+  const secret = process.env.NEXT_PUBLIC_CRON_SECRET;
+  return secret ? `${path}?secret=${encodeURIComponent(secret)}` : path;
+}
 
 export default function ScheduledPage() {
   const [patients, setPatients] = useState<Patient[]>([]);
@@ -36,9 +41,7 @@ export default function ScheduledPage() {
   async function runScheduler() {
     setBusy(true);
     try {
-      const secret = process.env.NEXT_PUBLIC_CRON_SECRET;
-      const url = secret ? `/api/cron/run?secret=${encodeURIComponent(secret)}` : "/api/cron/run";
-      const res = await fetch(url);
+      const res = await fetch(protectedUrl("/api/cron/run"));
       const data = await res.json();
       if (!res.ok) throw new Error(data.error ?? "Run failed");
       if (data.claimed === 0) {
@@ -67,6 +70,44 @@ export default function ScheduledPage() {
   const pending = patients.filter((p) => p.status === "pending" || p.status === "calling");
   const due = now === null ? [] : pending.filter((p) => new Date(p.scheduledAt).getTime() <= now);
 
+  async function clearQueue() {
+    if (pending.length === 0) return;
+    const confirmed = window.confirm(`Delete ${pending.length} queued patient(s)? This also removes their call attempts.`);
+    if (!confirmed) return;
+
+    setBusy(true);
+    try {
+      const res = await fetch(protectedUrl("/api/patients/queued"), { method: "DELETE" });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error ?? "Could not clear queue");
+      toast.success(`Deleted ${data.deleted} queued patient(s).`);
+      setNow(Date.now());
+      await load();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Could not clear queue");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function syncCallResults() {
+    setBusy(true);
+    try {
+      const res = await fetch(protectedUrl("/api/calls/sync"), { method: "POST" });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error ?? "Could not sync call results");
+      toast.success(`Synced ${data.completed + data.failed} call result(s).`, {
+        description: `${data.checked} checked · ${data.stillCalling} still calling`,
+      });
+      setNow(Date.now());
+      await load();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Could not sync call results");
+    } finally {
+      setBusy(false);
+    }
+  }
+
   return (
     <Card>
       <CardHeader className="flex-row items-start justify-between gap-3 space-y-0">
@@ -76,7 +117,7 @@ export default function ScheduledPage() {
             {pending.length} queued · {due.length} due now · auto-refreshes every 5s
           </CardDescription>
         </div>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap justify-end gap-2">
           <Button
             variant="outline"
             size="sm"
@@ -90,6 +131,12 @@ export default function ScheduledPage() {
           </Button>
           <Button size="sm" onClick={runScheduler} disabled={busy}>
             <Play className="size-4" /> Run due calls now
+          </Button>
+          <Button variant="secondary" size="sm" onClick={syncCallResults} disabled={busy}>
+            <RefreshCw className="size-4" /> Sync results
+          </Button>
+          <Button variant="destructive" size="sm" onClick={clearQueue} disabled={busy || pending.length === 0}>
+            <Trash2 className="size-4" /> Clear queue
           </Button>
         </div>
       </CardHeader>

@@ -27,9 +27,11 @@ export async function POST(request: Request) {
     }
 
     const { rows, errors } = parsePatientsCsv(csvText);
-    const created = rows.length > 0 ? await createPatients(rows) : 0;
+    const scheduledAt = new Date();
+    const dueNowRows = rows.map((row) => ({ ...row, scheduledAt }));
+    const created = dueNowRows.length > 0 ? await createPatients(dueNowRows) : 0;
 
-    return NextResponse.json({ created, skipped: errors.length, errors });
+    return NextResponse.json({ created, skipped: errors.length, errors, scheduledAt });
   } catch (err) {
     const message = err instanceof Error ? err.message : "Unknown error";
     return NextResponse.json({ error: message }, { status: 500 });

@@ -32,6 +32,13 @@ export async function listPatients(): Promise<
   });
 }
 
+export async function deleteQueuedPatients(): Promise<number> {
+  const result = await prisma.patient.deleteMany({
+    where: { status: { in: ["pending", "calling"] } },
+  });
+  return result.count;
+}
+
 // Atomically claim patients that are due, flipping pending -> calling so an
 // overlapping cron run can never pick up the same patient twice.
 export async function claimDuePatients(limit = 20): Promise<Patient[]> {

@@ -24,6 +24,14 @@ export async function createCall(input: {
   });
 }
 
+export async function listCallingCallsForSync(limit = 20): Promise<Call[]> {
+  return prisma.call.findMany({
+    where: { status: "calling", vapiCallId: { not: null } },
+    orderBy: { createdAt: "asc" },
+    take: limit,
+  });
+}
+
 // Called by the Vapi webhook when a call ends. Matched on vapiCallId.
 export async function completeCallByVapiId(input: {
   vapiCallId: string;

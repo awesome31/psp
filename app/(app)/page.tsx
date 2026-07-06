@@ -166,7 +166,7 @@ export default function CreateCallsPage() {
           </CardTitle>
           <CardDescription>
             Columns: name, phone, call_type, scheduled_at, doctor_name, medicine_name, last_visit_date. Indian
-            10-digit mobiles are accepted.
+            10-digit mobiles are accepted. Uploaded rows are queued for now.
           </CardDescription>
         </CardHeader>
         <CardContent>

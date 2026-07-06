@@ -20,18 +20,21 @@ function buildAssistant(patient: Patient) {
     name: `Swasth 365 — ${patient.callType}`,
     firstMessage: script.firstMessage,
     model: {
-      provider: env("VAPI_MODEL_PROVIDER", "anthropic"),
-      model: env("VAPI_MODEL", "claude-3-5-sonnet-20241022"),
+      provider: env("VAPI_MODEL_PROVIDER", "openai"),
+      model: env("VAPI_MODEL", "gpt-4o-mini"),
       messages: [{ role: "system", content: script.systemPrompt }],
     },
     voice: {
-      provider: env("VAPI_VOICE_PROVIDER", "11labs"),
-      voiceId: env("VAPI_VOICE_ID", "sarah"),
+      provider: env("VAPI_VOICE_PROVIDER", "vapi"),
+      voiceId: env("VAPI_VOICE_ID", "Naina"),
+      // TTS model — e.g. eleven_turbo_v2_5 for ElevenLabs multilingual (Hindi/
+      // Hinglish). Only sent when set, so other providers aren't affected.
+      ...(process.env.VAPI_VOICE_MODEL ? { model: process.env.VAPI_VOICE_MODEL } : {}),
     },
     transcriber: {
       provider: env("VAPI_TRANSCRIBER_PROVIDER", "deepgram"),
       model: env("VAPI_TRANSCRIBER_MODEL", "nova-2"),
-      language: env("VAPI_TRANSCRIBER_LANGUAGE", "en"),
+      language: env("VAPI_TRANSCRIBER_LANGUAGE", "hi"),
     },
     analysisPlan: {
       summaryPrompt: script.summaryPrompt,

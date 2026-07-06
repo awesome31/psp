@@ -42,7 +42,7 @@ Rohit Tyagi,+919930045439,follow_up,2026-07-06T10:00:00+05:30,Dr XYZ,Telma 40,20
 
 - `phone` — E.164 (`+91...`) or a 10-digit Indian mobile number
 - `call_type` — `follow_up` or `reminder`
-- `scheduled_at` — ISO timestamp; offset-less times are treated as IST
+- `scheduled_at` — ISO timestamp; offset-less times are treated as IST. Bulk uploads are queued for now so the scheduler can run them immediately.
 
 See `sample-patients.csv`.
 
@@ -93,5 +93,5 @@ See `sample-patients.csv`.
 - **Inbound "New Patient" calls** (the toll-free script) aren't built yet, but Vapi
   supports them: assign a number to an inbound assistant using the same script config.
 - The conversation model, voice, and transcriber are all env-configurable
-  (`VAPI_MODEL`, `VAPI_VOICE_ID`, …) — defaults to Anthropic Claude + ElevenLabs +
-  Deepgram. Adjust `VAPI_MODEL` to a model id Vapi currently supports.
+  (`VAPI_MODEL`, `VAPI_VOICE_ID`, …) — defaults to OpenAI `gpt-4o-mini`, Vapi
+  voice `Naina`, and Deepgram Hindi transcription.
