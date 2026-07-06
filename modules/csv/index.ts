@@ -51,6 +51,32 @@ export type ParseResult = {
   errors: { row: number; message: string }[];
 };
 
+// Validate a single patient record (e.g. from the "add one" form). Keys match
+// the CSV columns so the same rules apply everywhere.
+export function validatePatientRecord(record: Record<string, unknown>): {
+  row?: PatientRow;
+  error?: string;
+} {
+  const result = rowSchema.safeParse(record);
+  if (!result.success) {
+    return {
+      error: result.error.issues.map((i) => `${i.path.join(".")}: ${i.message}`).join("; "),
+    };
+  }
+  const d = result.data;
+  return {
+    row: {
+      name: d.name,
+      phone: d.phone,
+      callType: d.call_type,
+      scheduledAt: d.scheduled_at,
+      doctorName: d.doctor_name,
+      medicineName: d.medicine_name,
+      lastVisitDate: d.last_visit_date,
+    },
+  };
+}
+
 export function parsePatientsCsv(csvText: string): ParseResult {
   const parsed = Papa.parse<Record<string, string>>(csvText, {
     header: true,
