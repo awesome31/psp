@@ -1,0 +1,69 @@
+// Swasth 365 — data model
+// Two tables: patients (who they are) and calls (each call attempt + its outcome).
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  // Prisma 7: connection URL lives in prisma.config.ts (for CLI/migrations) and
+  // is passed to PrismaClient via a driver adapter at runtime (see modules/db).
+}
+
+enum CallType {
+  follow_up
+  reminder
+}
+
+enum PatientStatus {
+  pending // uploaded, waiting for its scheduled time
+  calling // a call is currently in flight (lock to prevent double-dialing)
+  completed // most recent call finished successfully
+  failed // most recent call failed
+}
+
+enum CallStatus {
+  calling
+  completed
+  failed
+}
+
+model Patient {
+  id            String        @id @default(cuid())
+  name          String
+  phone         String // E.164, e.g. +919930045439
+  callType      CallType
+  scheduledAt   DateTime // when the cron should place the call
+  doctorName    String?
+  medicineName  String?
+  lastVisitDate DateTime?
+  status        PatientStatus @default(pending)
+  retryCount    Int           @default(0)
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+
+  calls Call[]
+
+  @@index([status, scheduledAt])
+}
+
+model Call {
+  id        String    @id @default(cuid())
+  patientId String
+  patient   Patient   @relation(fields: [patientId], references: [id], onDelete: Cascade)
+
+  callType       CallType
+  status         CallStatus @default(calling)
+  vapiCallId     String?    @unique // Vapi's call id, used to match webhooks
+  summary        String? // natural-language recap from Vapi
+  transcriptUrl  String?
+  recordingUrl   String?
+  structuredData Json? // extracted fields (still_taking_medicine, etc.)
+
+  startedAt DateTime  @default(now())
+  endedAt   DateTime?
+  createdAt DateTime  @default(now())
+
+  @@index([patientId])
+}
