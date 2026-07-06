@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
   PhoneOutgoing,
+  CalendarClock,
   History,
   Users,
   BarChart3,
@@ -20,6 +21,7 @@ const NAV: NavSection[] = [
     title: "Calls",
     items: [
       { href: "/", label: "Create Calls", icon: PhoneOutgoing },
+      { href: "/scheduled", label: "Scheduled", icon: CalendarClock },
       { href: "/history", label: "Call History", icon: History },
     ],
   },
@@ -43,7 +45,7 @@ export function AppSidebar({ open, onClose }: { open: boolean; onClose: () => vo
 
       <aside
         className={cn(
-          "fixed inset-y-0 left-0 z-50 flex w-64 flex-col border-r bg-background transition-transform duration-200 md:static md:z-auto md:translate-x-0",
+          "fixed inset-y-0 left-0 z-50 flex w-64 flex-col border-r bg-sidebar transition-transform duration-200 md:static md:z-auto md:translate-x-0",
           open ? "translate-x-0" : "-translate-x-full",
         )}
       >

@@ -1,11 +1,10 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { UploadCloud, Plus } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -15,8 +14,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { StatusBadge } from "@/components/status-badge";
-import type { Patient } from "@/lib/types";
 
 function nowLocal() {
   const d = new Date();
@@ -35,8 +32,7 @@ const EMPTY = {
 };
 
 export default function CreateCallsPage() {
-  const [patients, setPatients] = useState<Patient[]>([]);
-  const [form, setForm] = useState({ ...EMPTY, scheduled_at: "" });
+  const [form, setForm] = useState({ ...EMPTY });
   const [busy, setBusy] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
 
@@ -44,18 +40,6 @@ export default function CreateCallsPage() {
   useEffect(() => {
     setForm((f) => (f.scheduled_at ? f : { ...f, scheduled_at: nowLocal() }));
   }, []);
-
-  const load = useCallback(async () => {
-    const res = await fetch("/api/patients");
-    const data = await res.json();
-    if (res.ok) setPatients(data.patients ?? []);
-  }, []);
-
-  useEffect(() => {
-    load();
-    const t = setInterval(load, 5000);
-    return () => clearInterval(t);
-  }, [load]);
 
   function set<K extends keyof typeof form>(key: K, value: string) {
     setForm((f) => ({ ...f, [key]: value }));
@@ -72,9 +56,8 @@ export default function CreateCallsPage() {
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error ?? "Could not add patient");
-      toast.success(`${form.name} added to the queue.`);
+      toast.success(`${form.name} added to the queue.`, { description: "Track it under Scheduled." });
       setForm({ ...EMPTY, scheduled_at: nowLocal() });
-      await load();
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Could not add patient");
     } finally {
@@ -101,37 +84,15 @@ export default function CreateCallsPage() {
           description: data.errors.map((x: { row: number; message: string }) => `Row ${x.row}: ${x.message}`).join("\n"),
         });
       } else {
-        toast.success(`Uploaded ${data.created} patient(s).`);
+        toast.success(`Uploaded ${data.created} patient(s).`, { description: "Track them under Scheduled." });
       }
       if (fileRef.current) fileRef.current.value = "";
-      await load();
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Upload failed");
     } finally {
       setBusy(false);
     }
   }
-
-  async function runScheduler() {
-    setBusy(true);
-    try {
-      const secret = process.env.NEXT_PUBLIC_CRON_SECRET;
-      const url = secret ? `/api/cron/run?secret=${encodeURIComponent(secret)}` : "/api/cron/run";
-      const res = await fetch(url);
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error ?? "Run failed");
-      toast.success(`Scheduler ran — placed ${data.placed}, failed ${data.failed}`, {
-        description: `${data.claimed} patient(s) were due.`,
-      });
-      await load();
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Run failed");
-    } finally {
-      setBusy(false);
-    }
-  }
-
-  const pending = patients.filter((p) => p.status === "pending" || p.status === "calling");
 
   return (
     <div className="space-y-6">
@@ -204,39 +165,7 @@ export default function CreateCallsPage() {
             <Button type="submit" variant="secondary" disabled={busy}>
               Upload CSV
             </Button>
-            <Button type="button" variant="outline" onClick={runScheduler} disabled={busy} className="ml-auto">
-              Run scheduler now
-            </Button>
           </form>
-        </CardContent>
-      </Card>
-
-      {/* Pending */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Scheduled &amp; pending</CardTitle>
-          <CardDescription>{pending.length} queued · auto-refreshes every 5s</CardDescription>
-        </CardHeader>
-        <CardContent>
-          {pending.length === 0 ? (
-            <p className="py-8 text-center text-sm text-muted-foreground">Nothing queued yet. Add a patient above.</p>
-          ) : (
-            <ul className="divide-y">
-              {pending.map((p) => (
-                <li key={p.id} className="flex flex-wrap items-center justify-between gap-2 py-3 first:pt-0 last:pb-0">
-                  <div className="flex items-center gap-2">
-                    <span className="font-medium">{p.name}</span>
-                    <span className="text-sm text-muted-foreground">{p.phone}</span>
-                    <Badge variant="secondary" className="font-normal">{p.callType}</Badge>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <span className="text-xs text-muted-foreground">{new Date(p.scheduledAt).toLocaleString("en-IN")}</span>
-                    <StatusBadge status={p.status} />
-                  </div>
-                </li>
-              ))}
-            </ul>
-          )}
         </CardContent>
       </Card>
     </div>

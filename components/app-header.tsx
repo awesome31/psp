@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 
 const TITLES: Record<string, string> = {
   "/": "Create Calls",
+  "/scheduled": "Scheduled & Pending",
   "/history": "Call History",
 };
 
@@ -19,12 +20,6 @@ export function AppHeader({ onMenu }: { onMenu: () => void }) {
         <Menu className="size-5" />
       </Button>
       <h1 className="text-sm font-medium tracking-tight">{title}</h1>
-      <div className="ml-auto flex items-center gap-2">
-        <span className="flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs text-muted-foreground">
-          <span className="size-1.5 rounded-full bg-emerald-500" />
-          Live
-        </span>
-      </div>
     </header>
   );
 }
