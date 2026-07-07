@@ -94,4 +94,4 @@ See `sample-patients.csv`.
   supports them: assign a number to an inbound assistant using the same script config.
 - The conversation model, voice, and transcriber are all env-configurable
   (`VAPI_MODEL`, `VAPI_VOICE_ID`, …) — defaults to OpenAI `gpt-4o-mini`, Vapi
-  voice `Naina`, and Deepgram Hindi transcription.
+  voice `Naina`, and Deepgram English transcription for better Hinglish capture.

@@ -34,7 +34,7 @@ function buildAssistant(patient: Patient) {
     transcriber: {
       provider: env("VAPI_TRANSCRIBER_PROVIDER", "deepgram"),
       model: env("VAPI_TRANSCRIBER_MODEL", "nova-2"),
-      language: env("VAPI_TRANSCRIBER_LANGUAGE", "hi"),
+      language: env("VAPI_TRANSCRIBER_LANGUAGE", "en"),
     },
     analysisPlan: {
       summaryPrompt: script.summaryPrompt,
