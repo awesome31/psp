@@ -7,12 +7,13 @@ import { buildScript } from "@/modules/scripts";
 
 const VAPI_BASE = "https://api.vapi.ai";
 const MODEL_PROVIDER = "openai";
-const MODEL_ID = "gpt-4o-mini";
-const VOICE_PROVIDER = "11labs";
-const VOICE_ID = "sarah";
+const MODEL_ID = "gpt-4o";
+const VOICE_PROVIDER = "vapi";
+const VOICE_ID = "Naina";
+const VOICE_VERSION = 2;
 const TRANSCRIBER_PROVIDER = "deepgram";
-const TRANSCRIBER_MODEL = "nova-2";
-const TRANSCRIBER_LANGUAGE = "en";
+const TRANSCRIBER_MODEL = "nova-3";
+const TRANSCRIBER_LANGUAGE = "multi";
 
 function env(name: string, fallback?: string): string {
   const v = process.env[name] ?? fallback;
@@ -35,6 +36,7 @@ function buildAssistant(patient: Patient) {
     voice: {
       provider: VOICE_PROVIDER,
       voiceId: VOICE_ID,
+      version: VOICE_VERSION,
     },
     transcriber: {
       provider: TRANSCRIBER_PROVIDER,

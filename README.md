@@ -93,5 +93,5 @@ See `sample-patients.csv`.
 - **Inbound "New Patient" calls** (the toll-free script) aren't built yet, but Vapi
   supports them: assign a number to an inbound assistant using the same script config.
 - The conversation model, voice, and transcriber are pinned in code for stable
-  call behavior: OpenAI `gpt-4o-mini`, ElevenLabs `sarah`, and Deepgram `nova-2`
-  with English transcription.
+  call behavior: OpenAI `gpt-4o`, Vapi `Naina` v2, and Deepgram `nova-3` with
+  multilingual transcription.
