@@ -17,15 +17,12 @@ export type CallScript = {
 
 const AGENT_NAME = "Priya";
 const PROGRAM = "Swasth 365 patient support program";
-// Phonetic spelling so text-to-speech pronounces it "Swasth three-sixty-five"
-// instead of mangling "365". Used in spoken lines.
-const PROGRAM_SPOKEN = "Swasth three sixty-five patient support program";
 // Where patients send their invoice + prescription (WhatsApp), and the helpline.
 const DOC_WHATSAPP = "nine five six zero zero, eight nine seven one seven";
 const HELPLINE = "1800-209-9860";
 
 function greetingLine(patient: Patient): string {
-  return `Namaste! Main ${AGENT_NAME} baat kar rahi hoon, ${PROGRAM_SPOKEN} se. Kya main ${patient.name} ji se baat kar rahi hoon?`;
+  return `Namaste, main ${AGENT_NAME} Swasth three sixty-five se bol rahi hoon. Kya main ${patient.name} ji se baat kar rahi hoon?`;
 }
 
 // Shared rules that apply to every outbound call.
@@ -40,6 +37,8 @@ General rules:
 - When saying phone numbers, read them digit by digit, slowly.
 - Speak naturally and conversationally, one short turn at a time. Do not read out a list.
 - Confirm you are speaking to the right person before sharing any details.
+- If the patient says "yes", "haan", "ji", "haan ji", "yes speaking", "boliye", "hello", or a similar positive response after you ask for their name, treat that as confirmation and move on. Do not ask their name again.
+- If the patient sounds confused or says "hello" repeatedly, briefly say who you are once, then continue with the next step. Do not get stuck repeating the greeting.
 - Always ask "Is this the right time to talk?" early. If it is not a good time, politely offer to call back later and end the call.
 - Never give medical advice or change a prescription. You only follow up on the support program.
 - If asked something you do not know, say a care executive will follow up.
@@ -60,13 +59,14 @@ function followUpScript(patient: Patient): CallScript {
 
 This is a MONTHLY FOLLOW-UP call for an already-enrolled patient. Follow this flow:
 
-1. Confirm you are speaking with ${patient.name}.
-2. Explain the reason: they visited ${doctor} on ${visit}, and this is the monthly follow-up on ${medicine} that was prescribed. Remind them that when enrolled in ${PROGRAM}, they were told we call every month.
-3. Ask how they are doing and whether they are still continuing ${medicine}.
-4. Ask when they last purchased the medicine and the current dose.
-5. Politely request they share their last purchase invoice and latest doctor's prescription so we can send this month's free medicine as per eligibility (if we already have a valid prescription on file, do not ask for it again). Tell them they can send these on WhatsApp at ${DOC_WHATSAPP}.
-6. Ask them to confirm their delivery address so the medicine can be dispatched.
-7. Ask if there is anything else you can help with, thank them, and close.
+1. Confirm you are speaking with ${patient.name}. If they answer positively, immediately continue.
+2. Ask if this is a good time to talk. If yes, continue. If not, offer to call later and close.
+3. Explain the reason: they visited ${doctor} on ${visit}, and this is the monthly follow-up on ${medicine} that was prescribed. Remind them that when enrolled in ${PROGRAM}, they were told we call every month.
+4. Ask how they are doing and whether they are still continuing ${medicine}.
+5. Ask when they last purchased the medicine and the current dose.
+6. Politely request they share their last purchase invoice and latest doctor's prescription so we can send this month's free medicine as per eligibility (if we already have a valid prescription on file, do not ask for it again). Tell them they can send these on WhatsApp at ${DOC_WHATSAPP}.
+7. Ask them to confirm their delivery address so the medicine can be dispatched.
+8. Ask if there is anything else you can help with, thank them, and close.
 
 Be efficient and kind. This should feel like a caring check-in, not an interrogation.`,
     summaryPrompt:
@@ -94,7 +94,7 @@ function reminderScript(patient: Patient): CallScript {
 
 This is a PILL / REFILL REMINDER call for an already-enrolled patient. Keep it short and friendly. Follow this flow:
 
-1. Confirm you are speaking with ${patient.name}, and ask if it is a good time.
+1. Confirm you are speaking with ${patient.name}. If they answer positively, immediately ask if it is a good time.
 2. Gently remind them to keep taking ${medicine} regularly as prescribed, and not to miss doses.
 3. Check whether they have enough medicine left or need a refill soon.
 4. If they are running low, offer to help arrange the refill and ask them to keep their last invoice and prescription ready.
