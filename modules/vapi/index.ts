@@ -1,10 +1,18 @@
 // Vapi client — places outbound AI voice calls and interprets webhooks.
 // We call Vapi's REST API directly (no SDK) to keep this module small and
-// dependency-free. All tunables come from env so nothing is hard-coded.
+// dependency-free. Secrets stay in env; model/voice/transcriber are pinned here
+// so production behavior does not drift with env changes.
 import type { Patient } from "@/modules/db";
 import { buildScript } from "@/modules/scripts";
 
 const VAPI_BASE = "https://api.vapi.ai";
+const MODEL_PROVIDER = "openai";
+const MODEL_ID = "gpt-4o-mini";
+const VOICE_PROVIDER = "11labs";
+const VOICE_ID = "sarah";
+const TRANSCRIBER_PROVIDER = "deepgram";
+const TRANSCRIBER_MODEL = "nova-2";
+const TRANSCRIBER_LANGUAGE = "en";
 
 function env(name: string, fallback?: string): string {
   const v = process.env[name] ?? fallback;
@@ -12,29 +20,26 @@ function env(name: string, fallback?: string): string {
   return v;
 }
 
-// Assistant config assembled per call. The script (system prompt, first
-// message, analysis plan) is patient-specific; model/voice come from env.
+// Assistant config assembled per call. The script is patient-specific; the
+// voice stack is intentionally hardcoded after testing.
 function buildAssistant(patient: Patient) {
   const script = buildScript(patient);
   const assistant: Record<string, unknown> = {
     name: `Swasth 365 — ${patient.callType}`,
     firstMessage: script.firstMessage,
     model: {
-      provider: env("VAPI_MODEL_PROVIDER", "openai"),
-      model: env("VAPI_MODEL", "gpt-4o-mini"),
+      provider: MODEL_PROVIDER,
+      model: MODEL_ID,
       messages: [{ role: "system", content: script.systemPrompt }],
     },
     voice: {
-      provider: env("VAPI_VOICE_PROVIDER", "vapi"),
-      voiceId: env("VAPI_VOICE_ID", "Naina"),
-      // TTS model — e.g. eleven_turbo_v2_5 for ElevenLabs multilingual (Hindi/
-      // Hinglish). Only sent when set, so other providers aren't affected.
-      ...(process.env.VAPI_VOICE_MODEL ? { model: process.env.VAPI_VOICE_MODEL } : {}),
+      provider: VOICE_PROVIDER,
+      voiceId: VOICE_ID,
     },
     transcriber: {
-      provider: env("VAPI_TRANSCRIBER_PROVIDER", "deepgram"),
-      model: env("VAPI_TRANSCRIBER_MODEL", "nova-2"),
-      language: env("VAPI_TRANSCRIBER_LANGUAGE", "en"),
+      provider: TRANSCRIBER_PROVIDER,
+      model: TRANSCRIBER_MODEL,
+      language: TRANSCRIBER_LANGUAGE,
     },
     analysisPlan: {
       summaryPrompt: script.summaryPrompt,
